@@ -70,6 +70,12 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - **Observado (log):** el offset estimado saltaba ~200 ms entre muestras y la latencia aparecía en 306 ms un segundo y en 10 ms otro. El PONG comparte el socket con el video; con cuadros en camino llega tarde y sesga el offset (hasta RTT/2).
 - **Decisión:** usar el offset de la muestra con menor RTT de las últimas 30 (como NTP), no la mediana de 10. Actualizado en PROTOCOL.md, la tablet y `mock_tablet.py`.
 
+## 2026-11-23 — Volver al cable y bitrate Wi-Fi más estable
+
+- **Observado:** al reconectar el cable estando por Wi-Fi, la sesión seguía por Wi-Fi. La calidad en Wi-Fi bajaba mucho.
+- **Decisión (cable):** durante una sesión Wi-Fi la tablet prueba cada 2 s una conexión a `127.0.0.1:47800` sin HELLO. Si la Mac responde por USB (la conexión queda abierta esperando el HELLO, en vez del cierre inmediato que hace adb cuando nada escucha), cierra la sesión Wi-Fi y reconecta por USB al instante. La Mac conserva el monitor virtual (periodo de gracia).
+- **Decisión (bitrate):** empieza en el máximo; baja 15 % (no 30 %) solo si el socket se atrasa o el RTT supera max(3× base, base + 50 ms); sube 10 % cada 2 s tras 3 s estables; mínimo 8 Mbps (no 4). Máximo por defecto 30 Mbps (opciones hasta 40). Motivo: el RTT en Wi-Fi tiene picos normales que no son congestión, y por debajo de ~8 Mbps el texto a 2800 × 1752 se ve borroso.
+
 ## Resultados de experimentos (Fase 3)
 
 Mediciones en hardware real. La columna "vidrio a vidrio" se mide con cámara (`scripts/measure-latency.md`).

@@ -27,13 +27,15 @@ CGEvent (clic, arrastre, scroll) ←──────────────�
 | Latencia captura → pantalla | ~12–18 ms típicos, picos ocasionales de ~55 ms (overlay / menú) |
 | Codificación | Pocos ms por cuadro; sube en cambios grandes de pantalla (mover ventanas, cambiar de app) |
 | Gestos | Tap, doble tap, arrastre, scroll con 2 dedos, clic derecho con 2 dedos y S Pen (hover y trazo): funcionan |
+| Reconexión | Con la app de la tablet cerrada, conectar el cable la abre y reconecta por USB de inmediato |
+| Wi-Fi | Funciona; la calidad bajaba demasiado (ajuste de bitrate suavizado el 23 nov, pendiente de volver a probar) |
 
 **Configuración recomendada:** Extender · 1400 × 876 · **H.264** · **60 Hz** · **30 Mbps**.
 HEVC a 120 Hz con 50 Mbps saturó el codificador de la Mac (51 ms por cuadro, ~82 fps, retraso notable
 con el S Pen), por eso sigue marcado como experimental.
 
-Pendiente de probar: reconexión del cable, arranque en frío, modo Wi-Fi, 10 minutos sin acumular retraso,
-la grabación de prueba (Fase 1) y la medición vidrio a vidrio con cámara.
+Pendiente de probar: el cambio automático de Wi-Fi a cable, la calidad en Wi-Fi tras el ajuste,
+10 minutos sin acumular retraso, la grabación de prueba (Fase 1) y la medición vidrio a vidrio con cámara.
 
 Además del hardware, el repositorio tiene pruebas automáticas: 19 pruebas unitarias en Android
 (protocolo, reloj, inercia), XCTest en la Mac (protocolo y gestos) y simuladores en Python del
@@ -119,7 +121,8 @@ Mientras el S Pen está cerca de la pantalla se ignoran los dedos (rechazo de pa
 1. En el menú de la Mac activa **Permitir conexión por Wi-Fi** (macOS pedirá permiso de red local).
 2. Conecta la tablet **una vez por cable**: queda emparejada (recibe un token secreto).
 3. Desconecta el cable. Con la app abierta, la tablet encuentra a la Mac por Bonjour y se conecta sola.
-   El bitrate se ajusta automáticamente al estado de la red.
+   El bitrate empieza en el máximo elegido (30 Mbps por defecto) y baja solo si la red se congestiona.
+4. Si vuelves a conectar el cable, en unos 2 s la tablet cambia sola a USB (menor latencia, mejor calidad).
 
 Para mejores resultados: red de 5/6 GHz y la Mac por Ethernet al router. "Revocar emparejamiento Wi-Fi"
 (menú Avanzado) invalida el token; la tablet tendrá que conectarse por cable otra vez.
@@ -175,9 +178,9 @@ scripts/build-mac.sh --test                            # Mac (XCTest)
 ### Criterios de aceptación por fase (PLAN.md)
 - [x] **Fase 0:** ambas apps compilan desde terminal (`build-mac.sh`, `install-android.sh`); el monitor "Tab S8+" aparece al conectar la tablet.
 - [ ] **Fase 1:** "Grabar prueba 10 s" → `ffplay ~/Desktop/test.h264` se ve nítido a 2800 × 1752; ~60 fps moviendo una ventana y codificación < 8 ms. *(La codificación ya se vio en pocos ms durante el uso; falta correr la grabación.)*
-- [ ] **Fase 2:** con el cable, la tablet muestra el escritorio extendido ✓; arrastrar una ventana se ve fluido ✓; desconectar y reconectar el cable recupera la imagen sola *(pendiente)*.
+- [x] **Fase 2:** con el cable, la tablet muestra el escritorio extendido; arrastrar una ventana se ve fluido; desconectar y reconectar el cable recupera la imagen sola.
 - [ ] **Fase 3:** latencia vidrio a vidrio por USB < 80 ms (`scripts/measure-latency.md`); sin acumulación de retraso en 10 min. *(Captura → pantalla medida: ~12–18 ms; falta la medición con cámara y la prueba de 10 min.)*
 - [x] **Fase 4:** mover una ventana, hacer scroll, abrir un menú contextual solo desde la tablet; el cursor sigue al S Pen en hover.
-- [ ] **Fase 5:** con ambas apps cerradas (TabDisplay con "Abrir al iniciar sesión"), conectar el cable → escritorio en < 3 s.
-- [ ] **Fase 6:** sin cable, < 120 ms y sin cortes > 1 s en 10 min; una tablet sin token es rechazada (`python3 scripts/mock_tablet.py --host <ip-de-la-mac>` debe recibir "Tablet no emparejada").
+- [x] **Fase 5:** con la app de la tablet cerrada, conectar el cable la abre y muestra el escritorio de inmediato (TabDisplay con "Abrir al iniciar sesión").
+- [ ] **Fase 6:** sin cable, < 120 ms y sin cortes > 1 s en 10 min; una tablet sin token es rechazada (`python3 scripts/mock_tablet.py --host <ip-de-la-mac>` debe recibir "Tablet no emparejada"). *(Conecta por Wi-Fi ✓; falta medir latencia y estabilidad tras el ajuste de bitrate.)*
 - Fase 7 (parcial): modo Duplicar, presión del S Pen como tableta y error claro si falla la API privada están hechos; falta el modo vertical.

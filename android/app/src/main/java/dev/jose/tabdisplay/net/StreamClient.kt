@@ -60,6 +60,8 @@ class StreamClient(
     @Volatile private var running = false
     @Volatile private var surface: Surface? = null
     @Volatile private var socket: Socket? = null
+    /** Una sesión Wi-Fi se cerró porque apareció el cable: reconectar de inmediato por USB. */
+    @Volatile private var switchToUsb = false
     @Volatile private var outQueue: ArrayBlockingQueue<ByteArray>? = null
     @Volatile var lastSnapshot: StreamStats.Snapshot? = null
         private set
@@ -145,6 +147,10 @@ class StreamClient(
                 socket = null
                 runCatching { sock.close() }
             }
+            if (switchToUsb) {
+                switchToUsb = false
+                delayMs = 0
+            }
         }
     }
 
@@ -193,6 +199,7 @@ class StreamClient(
 
         var decoder: VideoDecoder? = null
         var wifiLock: WifiManager.WifiLock? = null
+        var usbProbe: Thread? = null
         var started = false
         try {
             val headerScratch = ByteArray(Protocol.HEADER_SIZE)
@@ -227,6 +234,8 @@ class StreamClient(
                     setReferenceCounted(false)
                     acquire()
                 }
+                // Por Wi-Fi se vigila el cable: si aparece, se cambia a USB (menor latencia).
+                usbProbe = Thread({ usbProbeLoop(sock) }, "TabDisplay-usbprobe").also { it.start() }
             }
             val info = SessionInfo(
                 transport, ack.codec, ack.streamWidthPx, ack.streamHeightPx, ack.fps, ack.bitrate, ack.macName,
@@ -265,6 +274,7 @@ class StreamClient(
         } finally {
             outQueue = null
             sender.interrupt()
+            usbProbe?.interrupt()
             decoder?.release()
             wifiLock?.release()
             session = null
@@ -332,6 +342,38 @@ class StreamClient(
         }
     }
 
+    /** Durante una sesión Wi-Fi: cada 2 s revisa si la Mac es alcanzable por USB. */
+    private fun usbProbeLoop(wifiSocket: Socket) {
+        while (running && !Thread.currentThread().isInterrupted) {
+            if (!sleep(USB_PROBE_INTERVAL_MS)) return
+            if (usbAvailable()) {
+                Log.i(TAG, "Cable detectado: se cambia de Wi-Fi a USB")
+                switchToUsb = true
+                runCatching { wifiSocket.close() }
+                return
+            }
+        }
+    }
+
+    /**
+     * Prueba una conexión a 127.0.0.1 sin mandar HELLO. Si adb reverse está activo pero nada
+     * escucha en la Mac, adb acepta y cierra enseguida (read = -1); si la Mac escucha, espera el
+     * HELLO y la lectura vence por tiempo.
+     */
+    private fun usbAvailable(): Boolean {
+        val probe = tryConnect(InetSocketAddress(LOOPBACK, Protocol.DEFAULT_PORT), USB_CONNECT_TIMEOUT_MS) ?: return false
+        return try {
+            probe.soTimeout = 300
+            probe.getInputStream().read() != -1
+        } catch (e: SocketTimeoutException) {
+            true
+        } catch (e: IOException) {
+            false
+        } finally {
+            runCatching { probe.close() }
+        }
+    }
+
     private fun sleep(ms: Long): Boolean = try {
         Thread.sleep(ms)
         true
@@ -361,6 +403,7 @@ class StreamClient(
         private const val WIFI_CONNECT_TIMEOUT_MS = 1500
         private const val READ_TIMEOUT_MS = 5000
         private const val PING_INTERVAL_US = 1_000_000L
+        private const val USB_PROBE_INTERVAL_MS = 2000L
         private const val OUT_QUEUE_CAPACITY = 512
     }
 }

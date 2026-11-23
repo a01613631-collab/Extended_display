@@ -41,7 +41,7 @@ struct AppSettings: Codable, Equatable {
     var highRefreshRate = false
     var usbBitrateMbps = 30
     /// En Wi-Fi el bitrate se ajusta solo, sin pasar de este máximo.
-    var wifiMaxBitrateMbps = 20
+    var wifiMaxBitrateMbps = 30
     var wifiEnabled = false
     /// Segundos que el monitor virtual sigue vivo tras desconectar (para reconexiones rápidas).
     var gracePeriodSeconds = 10
@@ -51,7 +51,7 @@ struct AppSettings: Codable, Equatable {
     var stylusPressure = false
 
     static let usbBitrateOptions = [15, 20, 30, 40, 50]
-    static let wifiBitrateOptions = [10, 15, 20, 30]
+    static let wifiBitrateOptions = [10, 15, 20, 30, 40]
     static let graceOptions = [0, 5, 10, 30, 60]
 
     init() {}

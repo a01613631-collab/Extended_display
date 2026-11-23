@@ -307,7 +307,7 @@ final class DisplayService {
         let fps = settings.highRefreshRate && supports120 ? 120 : 60
         let bitrate = transport == .usb
             ? settings.usbBitrateMbps * 1_000_000
-            : max(4, settings.wifiMaxBitrateMbps * 3 / 4) * 1_000_000
+            : settings.wifiMaxBitrateMbps * 1_000_000
         return .success(StreamParams(codec: codec, width: width, height: height, fps: fps, bitrate: bitrate))
     }
 
@@ -612,29 +612,30 @@ final class DisplayService {
         session.congestionThisSecond = 0
     }
 
-    /// Baja rápido si el socket se atrasa o el RTT se dispara; sube despacio si todo va estable.
+    /// Wi-Fi: baja un 15 % si el socket se atrasa o el RTT se dispara mucho; sube un 10 % cada 2 s
+    /// tras 3 s estables. Suave a propósito: el RTT en Wi-Fi tiene picos normales que no son congestión.
     private func adaptWifiBitrate(_ session: Session) {
         let maxBitrate = settings.wifiMaxBitrateMbps * 1_000_000
-        let minBitrate = 4_000_000
+        let minBitrate = 8_000_000
         var congested = session.congestionThisSecond > 0
         if let rtt = session.tabletStats?.rttMs {
             let baseline = min(session.baselineRttMs ?? rtt, rtt)
             // La línea base sube muy despacio para olvidar mínimos viejos.
             session.baselineRttMs = baseline + 0.05
-            if rtt > max(baseline * 2, baseline + 30) { congested = true }
+            if rtt > max(baseline * 3, baseline + 50) { congested = true }
         }
         if congested {
             session.stableSeconds = 0
-            let lowered = max(minBitrate, session.bitrate * 7 / 10)
+            let lowered = max(minBitrate, session.bitrate * 85 / 100)
             if lowered != session.bitrate {
                 Log.net.info("Wi-Fi congestionado: bitrate \(lowered / 1_000_000) Mbps")
                 setBitrate(session, lowered)
             }
         } else {
             session.stableSeconds += 1
-            if session.stableSeconds >= 5, session.bitrate < maxBitrate {
-                session.stableSeconds = 3
-                setBitrate(session, min(maxBitrate, session.bitrate * 115 / 100))
+            if session.stableSeconds >= 3, session.bitrate < maxBitrate {
+                session.stableSeconds = 1
+                setBitrate(session, min(maxBitrate, session.bitrate * 110 / 100))
             }
         }
     }
