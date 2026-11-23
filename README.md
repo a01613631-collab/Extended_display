@@ -27,14 +27,14 @@ CGEvent (clic, arrastre, scroll) ←──────────────�
 | Latencia captura → pantalla | ~12–18 ms típicos, picos ocasionales de ~55 ms (overlay / menú) |
 | Codificación | Pocos ms por cuadro; sube en cambios grandes de pantalla (mover ventanas, cambiar de app) |
 | Gestos | Tap, doble tap, arrastre, scroll con 2 dedos, clic derecho con 2 dedos y S Pen (hover y trazo): funcionan |
-| Reconexión | Con la app de la tablet cerrada, conectar el cable la abre y reconecta por USB de inmediato |
+| Reconexión | Con la app de la tablet cerrada, conectar el cable la abre y reconecta por USB de inmediato; estando por Wi-Fi, al conectar el cable cambia sola a USB |
 | Wi-Fi | Funciona; la calidad bajaba demasiado (ajuste de bitrate suavizado el 23 nov, pendiente de volver a probar) |
 
 **Configuración recomendada:** Extender · 1400 × 876 · **H.264** · **60 Hz** · **30 Mbps**.
 HEVC a 120 Hz con 50 Mbps saturó el codificador de la Mac (51 ms por cuadro, ~82 fps, retraso notable
 con el S Pen), por eso sigue marcado como experimental.
 
-Pendiente de probar: el cambio automático de Wi-Fi a cable, la calidad en Wi-Fi tras el ajuste,
+Pendiente de probar: la calidad en Wi-Fi tras el ajuste,
 10 minutos sin acumular retraso, la grabación de prueba (Fase 1) y la medición vidrio a vidrio con cámara.
 
 Además del hardware, el repositorio tiene pruebas automáticas: 19 pruebas unitarias en Android
