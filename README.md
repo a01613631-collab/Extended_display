@@ -42,13 +42,12 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 
 ### 2. Firma de la app de Mac
 macOS guarda los permisos (Grabación de pantalla, Accesibilidad) por firma. Firmar siempre con tu
-"Personal Team" evita que se pierdan en cada compilación.
-```bash
-cp mac/Config/Signing.xcconfig.example mac/Config/Signing.xcconfig
-```
-Edita `mac/Config/Signing.xcconfig` y pon tu Team ID: es el valor `OU=` que imprime
-`security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`.
-Si no hay certificado: Xcode → Settings → Accounts → tu Apple ID → Manage Certificates… → + → Apple Development.
+certificado "Apple Development" evita que se pierdan en cada compilación.
+
+`scripts/build-mac.sh` detecta tu Team ID solo (del certificado del Llavero) y lo guarda en
+`mac/Config/Signing.xcconfig`. Si no tienes certificado: Xcode → Settings → Accounts → agrega tu Apple ID →
+**Manage Certificates… → + → Apple Development**. Sin certificado también compila (firma ad-hoc), pero
+macOS volverá a pedir los permisos tras cada compilación.
 
 ### 3. Compilar e instalar la app de Mac
 ```bash

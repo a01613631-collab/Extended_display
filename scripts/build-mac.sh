@@ -11,19 +11,35 @@ cd "$(dirname "$0")/../mac"
 
 command -v xcodegen >/dev/null || { echo "✗ Falta XcodeGen: brew install xcodegen" >&2; exit 1; }
 
+# --- Firma ---
+# Usa el Team ID de Config/Signing.xcconfig. Si falta o no es válido (p. ej. sigue el de ejemplo),
+# lo detecta del certificado "Apple Development" del Llavero y reescribe el archivo.
+# Sin certificado, firma ad-hoc (funciona, pero macOS vuelve a pedir permisos tras cada compilación).
+SIGNING_FILE=Config/Signing.xcconfig
+detect_team() {
+  security find-certificate -c "Apple Development" -p 2>/dev/null \
+    | openssl x509 -noout -subject 2>/dev/null \
+    | sed -n 's/.*OU *= *\([A-Z0-9]\{10\}\).*/\1/p' | head -n 1
+}
+current_team=""
+if [[ -f "$SIGNING_FILE" ]]; then
+  current_team=$(sed -n 's/^[[:space:]]*DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*\([A-Za-z0-9_]*\).*/\1/p' "$SIGNING_FILE" | head -n 1)
+fi
+
 SIGNING_OVERRIDES=()
-if [[ ! -f Config/Signing.xcconfig ]]; then
-  echo "! No existe mac/Config/Signing.xcconfig: se firma ad-hoc."
-  echo "  Los permisos se perderán en cada compilación. Copia Config/Signing.xcconfig.example"
-  echo "  a Config/Signing.xcconfig y pon tu Team ID para evitarlo."
-  SIGNING_OVERRIDES=(CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=)
-elif grep -q "ABCDE12345" Config/Signing.xcconfig; then
-  echo "✗ mac/Config/Signing.xcconfig todavía tiene el Team ID de ejemplo (ABCDE12345)." >&2
-  echo "  Tu Team ID es el valor OU= de:" >&2
-  echo "    security find-certificate -c \"Apple Development\" -p | openssl x509 -noout -subject" >&2
-  echo "  Si dice que no encuentra el certificado: Xcode → Settings → Accounts → tu Apple ID →" >&2
-  echo "  Manage Certificates… → + → Apple Development. O borra Signing.xcconfig para firmar ad-hoc." >&2
-  exit 1
+if [[ ! "$current_team" =~ ^[A-Z0-9]{10}$ || "$current_team" == "ABCDE12345" ]]; then
+  team=$(detect_team || true)
+  if [[ -n "$team" ]]; then
+    echo "DEVELOPMENT_TEAM = $team" > "$SIGNING_FILE"
+    echo "✓ Team ID detectado del certificado Apple Development: $team (guardado en mac/$SIGNING_FILE)"
+  else
+    rm -f "$SIGNING_FILE"
+    echo "! No hay certificado \"Apple Development\" en el Llavero: se firma ad-hoc."
+    echo "  Funciona, pero macOS pedirá otra vez los permisos tras cada compilación. Para evitarlo:"
+    echo "  Xcode → Settings → Accounts → tu Apple ID → Manage Certificates… → + → Apple Development,"
+    echo "  y vuelve a correr este script."
+    SIGNING_OVERRIDES=(CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=)
+  fi
 fi
 
 # Evita el aviso de "multiple matching destinations" en Macs con Apple Silicon.
