@@ -46,7 +46,9 @@ macOS guarda los permisos (Grabación de pantalla, Accesibilidad) por firma. Fir
 ```bash
 cp mac/Config/Signing.xcconfig.example mac/Config/Signing.xcconfig
 ```
-Edita `mac/Config/Signing.xcconfig` y pon tu Team ID (Xcode → Settings → Accounts → tu Apple ID → Personal Team).
+Edita `mac/Config/Signing.xcconfig` y pon tu Team ID: es el valor `OU=` que imprime
+`security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`.
+Si no hay certificado: Xcode → Settings → Accounts → tu Apple ID → Manage Certificates… → + → Apple Development.
 
 ### 3. Compilar e instalar la app de Mac
 ```bash
