@@ -55,6 +55,11 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - **Decisión:** como máximo 2 cuadros dentro del codificador. Si llega una captura con el codificador lleno, se guarda solo la más reciente y se codifica en cuanto sale un cuadro; las intermedias se descartan (cuentan en "Descartados"). El menú indica si el códec no aceptó el modo de baja latencia.
 - **Recomendación vigente:** H.264 a 60 Hz como configuración por defecto; HEVC/120 Hz siguen siendo experimentos.
 
+## 2026-11-23 — Entregar cada cuadro sin esperar al siguiente
+
+- **Observado:** con H.264 a 60 Hz la "codificación" medía ~14 ms, casi un intervalo de cuadro (16.7 ms): señal de que VideoToolbox retenía cada cuadro hasta recibir el siguiente.
+- **Decisión:** `VTCompressionSessionCompleteFrames(hasta el PTS del cuadro)` después de cada envío al codificador. Bloquea la cola de captura solo lo que tarda el hardware y garantiza que el último cuadro de un movimiento salga de inmediato.
+
 ## Resultados de experimentos (Fase 3)
 
 Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).

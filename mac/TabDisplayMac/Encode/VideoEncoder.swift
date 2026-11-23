@@ -140,7 +140,13 @@ final class VideoEncoder {
             Log.encoder.error("VTCompressionSessionEncodeFrame: \(status)")
             if keyframe { requestKeyframe() }
             finishFrame()
+            return
         }
+        // Obliga a VideoToolbox a entregar este cuadro YA, sin esperar al siguiente. Sin esto,
+        // el codificador puede retener un cuadro hasta que llega otro: con la pantalla quieta, el
+        // final de un trazo del S Pen aparecería hasta 250 ms tarde (el siguiente "refresco").
+        // Bloquea la cola de captura solo lo que tarda el hardware (pocos ms).
+        VTCompressionSessionCompleteFrames(session, untilPresentationTimeStamp: pts)
     }
 
     // MARK: - Sesión
