@@ -97,8 +97,14 @@ class VideoDecoder(
         for (i in 0 until count) {
             val render = i == count - 1
             try {
-                mc?.releaseOutputBuffer(pendingOutputs[i], render)
-                if (!render) stats.framesDropped.incrementAndGet()
+                if (render) {
+                    // "Muéstralo ya": con releaseOutputBuffer(index, true) Android usaría el PTS como
+                    // hora de presentación, y el PTS viene del reloj de la Mac (días "en el futuro").
+                    mc?.releaseOutputBuffer(pendingOutputs[i], System.nanoTime())
+                } else {
+                    mc?.releaseOutputBuffer(pendingOutputs[i], false)
+                    stats.framesDropped.incrementAndGet()
+                }
             } catch (e: IllegalStateException) {
                 // Índice de antes de un flush: se ignora.
             }

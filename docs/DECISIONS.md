@@ -60,6 +60,11 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - **Observado:** con H.264 a 60 Hz la "codificación" medía ~14 ms, casi un intervalo de cuadro (16.7 ms): señal de que VideoToolbox retenía cada cuadro hasta recibir el siguiente.
 - **Decisión:** `VTCompressionSessionCompleteFrames(hasta el PTS del cuadro)` después de cada envío al codificador. Bloquea la cola de captura solo lo que tarda el hardware y garantiza que el último cuadro de un movimiento salga de inmediato.
 
+## 2026-11-23 — Renderizar con la hora de la tablet, no con el PTS
+
+- **Observado (log):** en `OnFrameRenderedListener`, `renderUs` era idéntico al PTS. `releaseOutputBuffer(index, true)` usa el PTS como hora de presentación deseada, y nuestro PTS es el reloj de la Mac (~6.8 días "en el futuro" para la tablet). La latencia calculada salía absurda y se descartaba ("—"), y SurfaceFlinger recibía horas de presentación sin sentido.
+- **Decisión:** `releaseOutputBuffer(index, System.nanoTime())`: presentar en el siguiente vsync. El PTS sigue viajando por el decodificador solo para medir la latencia.
+
 ## Resultados de experimentos (Fase 3)
 
 Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).
