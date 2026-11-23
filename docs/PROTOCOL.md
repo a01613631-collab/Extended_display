@@ -57,7 +57,7 @@ Un `type` desconocido se **ignora** (se lee y descarta su payload); así se pued
 - `transport` es informativo. **La Mac decide el transporte por la dirección remota**: una conexión desde loopback (`127.0.0.1`/`::1`, que es lo que entrega `adb reverse`) es USB; cualquier otra es Wi-Fi.
 - `token` es `null` por USB y obligatorio por Wi-Fi (base64 de 32 bytes, recibido antes en `HELLO_ACK.pairingToken`).
 
-La tablet debe mandar `HELLO` en cuanto conecta. Si la Mac no lo recibe en 5 s, cierra.
+La tablet debe mandar `HELLO` como **primer** mensaje, en cuanto conecta. Si la Mac no lo recibe en 5 s, cierra. Por robustez, antes del `HELLO` la Mac responde `PING` con `PONG`, cierra con `BYE` e ignora cualquier otro mensaje.
 
 ### HELLO_ACK (Mac → tablet)
 ```json

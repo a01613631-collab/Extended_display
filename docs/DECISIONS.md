@@ -44,6 +44,11 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - Prioridad conexión: USB (`127.0.0.1`) primero, luego Wi-Fi (NSD) si hay token. Reintento cada 500 ms; 3 s tras un rechazo.
 - El token se guarda en `SharedPreferences`, excluido de respaldos y transferencias (`dataExtractionRules`).
 
+## 2026-11-23 — Primera prueba en hardware: HELLO debe ir primero
+
+- **Bug:** el hilo emisor de Android mandaba un PING al arrancar, antes que el HELLO; la Mac lo trataba como error de protocolo (BYE 1) y la tablet reintentaba sin fin. Los simuladores no lo detectaron porque `mock_tablet.py` sí manda HELLO primero.
+- **Arreglo:** la tablet escribe el HELLO directamente en el socket antes de arrancar el hilo emisor. La Mac, por robustez, antes del HELLO responde PING, cierra con BYE e ignora lo demás (documentado en PROTOCOL.md; no rompe compatibilidad).
+
 ## Resultados de experimentos (Fase 3)
 
 Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).

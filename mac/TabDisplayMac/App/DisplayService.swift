@@ -214,7 +214,17 @@ final class DisplayService {
 
     private func handleHandshake(_ client: ClientConnection, _ header: MessageHeader, _ payload: Data) {
         guard header.type == MsgType.hello.rawValue else {
-            if header.type == MsgType.bye.rawValue { client.close(nil) } else { client.sendBye(.protocolError) }
+            // Antes del HELLO solo importa un BYE; lo demás (p. ej. un PING adelantado) se responde o ignora.
+            switch MsgType(rawValue: header.type) {
+            case .bye?:
+                client.close(nil)
+            case .ping?:
+                var echo = Data()
+                echo.appendBE(header.timestampUs)
+                client.send(.pong, payload: echo)
+            default:
+                break
+            }
             return
         }
         pending[client.id] = nil

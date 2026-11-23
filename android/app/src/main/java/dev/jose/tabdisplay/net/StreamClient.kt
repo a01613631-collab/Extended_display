@@ -175,22 +175,26 @@ class StreamClient(
     private fun runSession(sock: Socket, transport: Transport): Long {
         sock.soTimeout = READ_TIMEOUT_MS
         val input = DataInputStream(BufferedInputStream(sock.getInputStream(), 256 * 1024))
+        val output = sock.getOutputStream()
+
+        // HELLO debe ser el PRIMER mensaje (PROTOCOL.md): se escribe aquí, antes de arrancar el
+        // hilo emisor, que manda PING en cuanto empieza.
+        val token = if (transport == Transport.WIFI) prefs.pairingToken else null
+        val hello = Hello(
+            device.deviceName, device.widthPx, device.heightPx, device.densityDpi,
+            device.refreshRates, device.codecs, transport.wireName, token,
+        )
+        output.write(Protocol.encode(MsgType.HELLO, Protocol.nowUs(), hello.toJson()))
+
         val queue = ArrayBlockingQueue<ByteArray>(OUT_QUEUE_CAPACITY)
         outQueue = queue
-        val sender = Thread({ senderLoop(sock.getOutputStream(), queue) }, "TabDisplay-send")
+        val sender = Thread({ senderLoop(output, queue) }, "TabDisplay-send")
         sender.start()
 
         var decoder: VideoDecoder? = null
         var wifiLock: WifiManager.WifiLock? = null
         var started = false
         try {
-            val token = if (transport == Transport.WIFI) prefs.pairingToken else null
-            val hello = Hello(
-                device.deviceName, device.widthPx, device.heightPx, device.densityDpi,
-                device.refreshRates, device.codecs, transport.wireName, token,
-            )
-            send(MsgType.HELLO, hello.toJson())
-
             val headerScratch = ByteArray(Protocol.HEADER_SIZE)
             val first = Protocol.readHeader(input, headerScratch)
             if (first.type == MsgType.BYE) return handleBye(input, first, transport)
