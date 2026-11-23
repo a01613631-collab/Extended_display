@@ -65,6 +65,11 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - **Observado (log):** en `OnFrameRenderedListener`, `renderUs` era idéntico al PTS. `releaseOutputBuffer(index, true)` usa el PTS como hora de presentación deseada, y nuestro PTS es el reloj de la Mac (~6.8 días "en el futuro" para la tablet). La latencia calculada salía absurda y se descartaba ("—"), y SurfaceFlinger recibía horas de presentación sin sentido.
 - **Decisión:** `releaseOutputBuffer(index, System.nanoTime())`: presentar en el siguiente vsync. El PTS sigue viajando por el decodificador solo para medir la latencia.
 
+## 2026-11-23 — Offset de reloj por mínimo RTT
+
+- **Observado (log):** el offset estimado saltaba ~200 ms entre muestras y la latencia aparecía en 306 ms un segundo y en 10 ms otro. El PONG comparte el socket con el video; con cuadros en camino llega tarde y sesga el offset (hasta RTT/2).
+- **Decisión:** usar el offset de la muestra con menor RTT de las últimas 30 (como NTP), no la mediana de 10. Actualizado en PROTOCOL.md, la tablet y `mock_tablet.py`.
+
 ## Resultados de experimentos (Fase 3)
 
 Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).

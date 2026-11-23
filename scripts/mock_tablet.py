@@ -72,7 +72,7 @@ def main() -> None:
     stop = threading.Event()
     rtts: list[float] = []
     stats = {"frames": 0, "keyframes": 0, "bytes": 0, "configs": 0, "latency": []}
-    clock_offsets: list[int] = []
+    clock_offsets: list[tuple[int, int]] = []
 
     def periodic() -> None:
         start = time.monotonic()
@@ -118,7 +118,8 @@ def main() -> None:
                 if flags & p.FLAG_KEYFRAME:
                     stats["keyframes"] += 1
                 if clock_offsets:
-                    offset = statistics.median(clock_offsets[-10:])
+                    # Offset de la muestra con menor RTT (PROTOCOL.md, "Medición de latencia").
+                    offset = min(clock_offsets[-30:])[1]
                     stats["latency"].append((p.now_us() - (ts - offset)) / 1000)
                 if out:
                     out.write(payload)
@@ -131,7 +132,7 @@ def main() -> None:
                 now = p.now_us()
                 rtt_us = now - echo
                 rtts.append(rtt_us / 1000)
-                clock_offsets.append(ts - (echo + rtt_us // 2))
+                clock_offsets.append((rtt_us, ts - (echo + rtt_us // 2)))
             elif msg_type == p.PING:
                 send(p.encode(p.PONG, ts.to_bytes(8, "big")))
             elif msg_type == p.BYE:

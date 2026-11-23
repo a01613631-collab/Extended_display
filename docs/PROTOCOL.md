@@ -134,7 +134,7 @@ Todos los campos son opcionales; la Mac solo los muestra (y usa `rttMs` para aju
 
 ## Medición de latencia
 1. La tablet manda PING cada 1 s; la Mac responde PONG con `echoTimestampUs` (y su propio reloj en `timestampUs`).
-2. RTT = ahora − echo. Offset de reloj ≈ `timestampUs(PONG) − (echo + RTT/2)`; usar la mediana de las últimas 10 muestras.
+2. RTT = ahora − echo. Offset de reloj ≈ `timestampUs(PONG) − (echo + RTT/2)`. Como el PONG comparte el socket con el video y puede llegar tarde (retraso asimétrico), se usa el offset de la muestra con **menor RTT** de las últimas 30 (como NTP), no la mediana.
 3. Latencia por cuadro (captura → render) = `renderTimeTablet − (frame.timestampUs − offset)`.
 
 ## Reglas de robustez

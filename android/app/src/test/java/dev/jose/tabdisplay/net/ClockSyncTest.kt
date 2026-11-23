@@ -17,11 +17,15 @@ class ClockSyncTest {
     }
 
     @Test
-    fun medianIgnoresOutliers() {
-        val clock = ClockSync(window = 5)
-        repeat(4) { i -> clock.onPong(1000L + i * 100 + 2, 1000L + i * 100, 50_001L + i * 100) }
-        // Una muestra con mucho retraso de un solo lado.
-        clock.onPong(2_000_000, 1_900_000, 1_950_000 + 49_000 + 40_000)
+    fun usesSampleWithLowestRtt() {
+        val clock = ClockSync(window = 10)
+        // Una sola muestra limpia (RTT 2 µs, offset 49 000)…
+        clock.onPong(1002, 1000, 50_001)
+        // …y muchas con el PONG retrasado 400 ms detrás del video (RTT grande, offset sesgado).
+        repeat(8) { i ->
+            val echo = 2_000_000L + i * 1_000_000
+            clock.onPong(echo + 400_000, echo, echo + 49_000 + 400_000)
+        }
         assertEquals(49_000L, clock.offsetUs)
     }
 
