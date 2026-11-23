@@ -1,0 +1,22 @@
+# macOS / Xcode
+.DS_Store
+mac/TabDisplayMac.xcodeproj/
+mac/TabDisplayMac/Info.plist
+mac/build/
+mac/Config/Signing.xcconfig
+xcuserdata/
+DerivedData/
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+*.iml
+
+# Herramientas
+__pycache__/
+*.h264
+*.hevc
