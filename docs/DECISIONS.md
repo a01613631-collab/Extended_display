@@ -87,4 +87,4 @@ Mediciones en hardware real. La columna "vidrio a vidrio" se mide con cámara (`
 | | USB | H.264 | 60 | 15 Mbps | | | |
 | | USB | H.264 | 60 | 50 Mbps | | | |
 | | USB | HEVC | 60 | 30 Mbps | | | |
-| | Wi-Fi | H.264 | 60 | auto | | | |
+| 2026-11-23 | Wi-Fi | H.264 | 60 | auto (máx. 30) | pendiente | — | Tras suavizar el bitrate adaptativo la calidad "mejoró mucho" (antes bajaba hasta 4 Mbps). Al reconectar el cable cambia sola a USB. |
