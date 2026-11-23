@@ -1,0 +1,4 @@
+// Ajustes comunes. La firma va en Signing.xcconfig (local, no se sube a git).
+// Copia Signing.xcconfig.example a Signing.xcconfig y pon tu Team ID del "Personal Team".
+CODE_SIGN_IDENTITY = Apple Development
+#include? "Signing.xcconfig"

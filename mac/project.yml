@@ -1,0 +1,64 @@
+# Proyecto Xcode generado con XcodeGen: `xcodegen generate` (no editar el .xcodeproj a mano).
+name: TabDisplayMac
+options:
+  bundleIdPrefix: dev.jose
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+targets:
+  TabDisplayMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: TabDisplayMac
+    info:
+      path: TabDisplayMac/Info.plist
+      properties:
+        CFBundleName: TabDisplay
+        CFBundleDisplayName: TabDisplay
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSApplicationCategoryType: public.app-category.utilities
+        LSMinimumSystemVersion: "14.0"
+        # Solo vive en la barra de menús (sin icono en el Dock).
+        LSUIElement: true
+        NSHumanReadableCopyright: "Uso personal"
+        NSLocalNetworkUsageDescription: "TabDisplay usa la red local para transmitir el escritorio a la tablet por Wi-Fi."
+        NSBonjourServices:
+          - _tabdisplay._tcp
+    settings:
+      base:
+        PRODUCT_NAME: TabDisplay
+        PRODUCT_BUNDLE_IDENTIFIER: dev.jose.tabdisplay.mac
+        SWIFT_OBJC_BRIDGING_HEADER: TabDisplayMac/Display/TabDisplayMac-Bridging-Header.h
+        # Sin sandbox: usa API privada (CGVirtualDisplay), Accesibilidad y lanza adb.
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_STYLE: Automatic
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    scheme:
+      testTargets:
+        - TabDisplayMacTests
+  TabDisplayMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    # Las pruebas compilan directamente la lógica pura (sin lanzar la app).
+    sources:
+      - path: TabDisplayMacTests
+      - path: TabDisplayMac/Net/Protocol.swift
+      - path: TabDisplayMac/Input/GestureResolver.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.jose.tabdisplay.mac.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic

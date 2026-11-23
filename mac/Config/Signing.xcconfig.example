@@ -1,0 +1,6 @@
+// Copia este archivo a mac/Config/Signing.xcconfig y pon tu Team ID.
+// Lo encuentras en Xcode → Settings → Accounts → (tu Apple ID) → Personal Team,
+// o con: security find-identity -v -p codesigning   (el código entre paréntesis).
+// Firmar siempre con la misma identidad evita que macOS "olvide" los permisos
+// de Grabación de pantalla y Accesibilidad al recompilar.
+DEVELOPMENT_TEAM = ABCDE12345
