@@ -34,11 +34,9 @@ pégale el error a Claude Code junto con el archivo.
 brew install xcodegen android-platform-tools ffmpeg
 ```
 Además: **Xcode** (App Store) y **Android Studio** (trae el JDK y el SDK de Android). Abre Android Studio una vez
-para que descargue el SDK. Para compilar Android desde la terminal:
-```bash
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-export ANDROID_HOME="$HOME/Library/Android/sdk"
-```
+para que descargue el SDK. `scripts/install-android.sh` encuentra solo el JDK y el SDK
+(Android Studio en `/Applications` o `~/Applications`, `brew install openjdk@21`,
+`brew install --cask android-commandlinetools`).
 
 ### 2. Firma de la app de Mac
 macOS guarda los permisos (Grabación de pantalla, Accesibilidad) por firma. Firmar siempre con tu
