@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TabDisplay</string>
+    <string name="status_waiting">Esperando a la Mac…</string>
+    <string name="hint_usb">Conecta el cable USB-C a la Mac con TabDisplay abierto. La Mac configura adb reverse y abre esta app sola.</string>
+    <string name="hint_wifi_ready">Wi-Fi activado: buscando a %1$s en la red local.</string>
+    <string name="hint_wifi_unpaired">Para usar Wi-Fi, conecta una vez por cable para emparejar.</string>
+    <string name="wifi_switch">Conexión por Wi-Fi</string>
+    <string name="forget_pairing">Olvidar emparejamiento</string>
+    <string name="pairing_forgotten">Emparejamiento borrado</string>
+    <string name="paired_with">Emparejada con %1$s</string>
+    <string name="not_paired">Sin emparejar</string>
+    <string name="mac_rejected">La Mac rechazó la conexión: %1$s</string>
+    <string name="wifi_unauthorized">La Mac no reconoció el emparejamiento. Conecta por cable para emparejar de nuevo.</string>
+    <string name="overlay_hint">Toca con 3 dedos para ocultar</string>
+    <string name="footer">Toca con 3 dedos durante la transmisión para ver las estadísticas.</string>
+</resources>
