@@ -111,7 +111,8 @@ struct MenuView: View {
                 metricRow("Stream", "\(status.streamWidth)×\(status.streamHeight) \(status.codec == .hevc ? "HEVC" : "H.264") @\(status.fps)")
                 if let metrics {
                     metricRow("Enviado", String(format: "%.0f fps · %.1f Mbps (objetivo %d)", metrics.fpsSent, metrics.mbpsSent, metrics.bitrate / 1_000_000))
-                    metricRow("Codificación", String(format: "%.1f ms por cuadro", metrics.encodeMs))
+                    metricRow("Codificación", String(format: "%.1f ms por cuadro", metrics.encodeMs)
+                              + (status.encoderLowLatency == false ? " (sin modo baja latencia)" : ""))
                     metricRow("Descartados", "\(metrics.droppedFrames + (tablet?.droppedFrames ?? 0))")
                 }
                 if let tablet {

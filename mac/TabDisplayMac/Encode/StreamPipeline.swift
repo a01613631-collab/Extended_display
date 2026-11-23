@@ -24,6 +24,13 @@ final class StreamPipeline {
     private var refreshesSinceCapture = 0
     private var refreshTimer: DispatchSourceTimer?
     private var stopped = false
+    /// Cuadro capturado que espera a que el codificador se desocupe (solo el más reciente).
+    private var pendingCapture: (CVPixelBuffer, UInt64)?
+    private let counterLock = NSLock()
+    private var skipped = 0
+
+    /// Máximo de cuadros dentro del codificador. Más que esto sería una fila: latencia pura.
+    private static let maxFramesInFlight = 2
 
     /// Re-codificaciones del último cuadro cuando la pantalla queda quieta: con control de tasa de
     /// baja latencia el primer cuadro tras un cambio grande sale borroso, y repetirlo lo afina.
@@ -36,6 +43,19 @@ final class StreamPipeline {
         self.height = height
         self.fps = fps
         encoder = try VideoEncoder(codec: codec, width: width, height: height, fps: fps, bitrate: bitrate)
+        encoder.onEncodeComplete = { [weak self] in
+            guard let self else { return }
+            self.capture.queue.async { self.encodePendingIfPossible() }
+        }
+    }
+
+    /// Cuadros capturados que se saltaron porque el codificador iba atrasado (desde la última lectura).
+    func takeSkippedFrames() -> Int {
+        counterLock.lock()
+        defer { counterLock.unlock() }
+        let value = skipped
+        skipped = 0
+        return value
     }
 
     func start() async throws {
@@ -67,7 +87,9 @@ final class StreamPipeline {
             refreshTimer?.cancel()
             refreshTimer = nil
             lastPixelBuffer = nil
+            pendingCapture = nil
             encoder.onFrame = nil
+            encoder.onEncodeComplete = nil
             encoder.invalidate()
         }
     }
@@ -98,11 +120,33 @@ final class StreamPipeline {
         lastPixelBuffer = pixelBuffer
         lastCaptureUs = HostClock.nowUs()
         refreshesSinceCapture = 0
+        // Si el codificador va atrasado no se le hace fila: se guarda solo el cuadro más nuevo
+        // y se codifica en cuanto salga uno (el que estaba esperando se descarta).
+        if encoder.framesInFlight >= Self.maxFramesInFlight {
+            if pendingCapture != nil { countSkipped() }
+            pendingCapture = (pixelBuffer, timestampUs)
+            return
+        }
+        pendingCapture = nil
         encode(pixelBuffer, timestampUs: timestampUs)
     }
 
+    private func encodePendingIfPossible() {
+        guard !stopped, let pending = pendingCapture,
+              encoder.framesInFlight < Self.maxFramesInFlight else { return }
+        pendingCapture = nil
+        encode(pending.0, timestampUs: pending.1)
+    }
+
+    private func countSkipped() {
+        counterLock.lock()
+        skipped += 1
+        counterLock.unlock()
+    }
+
     private func refreshIfIdle() {
-        guard !stopped, let pixelBuffer = lastPixelBuffer, refreshesSinceCapture < Self.maxRefreshes else { return }
+        guard !stopped, pendingCapture == nil, let pixelBuffer = lastPixelBuffer,
+              refreshesSinceCapture < Self.maxRefreshes, encoder.framesInFlight == 0 else { return }
         let now = HostClock.nowUs()
         guard now &- lastCaptureUs >= Self.refreshDelayUs, now &- lastEncodeUs >= Self.refreshDelayUs else { return }
         refreshesSinceCapture += 1

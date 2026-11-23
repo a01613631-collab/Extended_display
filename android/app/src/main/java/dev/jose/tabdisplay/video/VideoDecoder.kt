@@ -106,10 +106,16 @@ class VideoDecoder(
         pendingOutputs.clear()
     }
 
+    private var renderedForLog = 0
+
     private val frameRenderedListener = MediaCodec.OnFrameRenderedListener { _, presentationTimeUs, nanoTime ->
         stats.framesRendered.incrementAndGet()
-        clock.macToLocalUs(presentationTimeUs)?.let { captureLocalUs ->
-            stats.addLatencySample(nanoTime / 1000 - captureLocalUs)
+        val offset = clock.offsetUs
+        val latencyUs = offset?.let { nanoTime / 1000 - (presentationTimeUs - it) }
+        if (latencyUs != null) stats.addLatencySample(latencyUs)
+        // Diagnóstico cada ~5 s: valores crudos para verificar el cálculo de latencia.
+        if (++renderedForLog % 300 == 1) {
+            Log.i(TAG, "latencia: pts=$presentationTimeUs renderUs=${nanoTime / 1000} offsetUs=$offset → ${latencyUs?.let { it / 1000 }} ms")
         }
     }
 

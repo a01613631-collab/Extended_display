@@ -56,9 +56,14 @@ class StreamStats {
         lastTimeUs = Protocol.nowUs()
     }
 
+    val latencyRejected = AtomicLong()
+
     fun addLatencySample(latencyUs: Long) {
-        // Descarta valores absurdos (offset aún no estable o cuadro de "refresco").
-        if (latencyUs < 0 || latencyUs > 2_000_000) return
+        // Descarta valores absurdos (offset aún no estable o relojes no comparables).
+        if (latencyUs < 0 || latencyUs > 2_000_000) {
+            latencyRejected.incrementAndGet()
+            return
+        }
         latencySumUs.addAndGet(latencyUs)
         latencyCount.incrementAndGet()
     }

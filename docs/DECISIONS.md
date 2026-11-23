@@ -49,6 +49,12 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 - **Bug:** el hilo emisor de Android mandaba un PING al arrancar, antes que el HELLO; la Mac lo trataba como error de protocolo (BYE 1) y la tablet reintentaba sin fin. Los simuladores no lo detectaron porque `mock_tablet.py` sí manda HELLO primero.
 - **Arreglo:** la tablet escribe el HELLO directamente en el socket antes de arrancar el hilo emisor. La Mac, por robustez, antes del HELLO responde PING, cierra con BYE e ignora lo demás (documentado en PROTOCOL.md; no rompe compatibilidad).
 
+## 2026-11-23 — Sin fila en el codificador
+
+- **Observado:** HEVC a 120 Hz con 2800 × 1752 dio 51 ms de "codificación" por cuadro, 82 fps y retraso notable con el S Pen. El codificador recibía más cuadros de los que procesa y se formaba una fila.
+- **Decisión:** como máximo 2 cuadros dentro del codificador. Si llega una captura con el codificador lleno, se guarda solo la más reciente y se codifica en cuanto sale un cuadro; las intermedias se descartan (cuentan en "Descartados"). El menú indica si el códec no aceptó el modo de baja latencia.
+- **Recomendación vigente:** H.264 a 60 Hz como configuración por defecto; HEVC/120 Hz siguen siendo experimentos.
+
 ## Resultados de experimentos (Fase 3)
 
 Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).

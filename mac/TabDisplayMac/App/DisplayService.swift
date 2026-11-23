@@ -34,6 +34,8 @@ struct ServiceStatus: Equatable {
     var streamWidth = 0
     var streamHeight = 0
     var fps = 0
+    /// nil = aún no se sabe; false = el códec no aceptó el modo de baja latencia (habrá más retraso).
+    var encoderLowLatency: Bool?
     var metrics: StreamMetrics?
     var virtualDisplayActive = false
     var serverError: String?
@@ -352,6 +354,7 @@ final class DisplayService {
         status.fps = params.fps
         status.sessionError = nil
         status.metrics = nil
+        status.encoderLowLatency = nil
 
         startPipeline(session)
     }
@@ -400,6 +403,7 @@ final class DisplayService {
                         }
                         self.status.phase = .streaming
                         self.status.sessionError = nil
+                        self.status.encoderLowLatency = pipeline.encoder.lowLatencyMode
                     }
                 } catch {
                     self?.queue.async {
@@ -589,6 +593,7 @@ final class DisplayService {
     private func metricsTick() {
         guard let session else { return }
         let bytes = session.connection.bytesSent
+        session.droppedFrames += session.pipeline?.takeSkippedFrames() ?? 0
         var metrics = StreamMetrics()
         metrics.fpsSent = Double(session.framesSent)
         metrics.mbpsSent = Double(bytes &- session.bytesSentAtLastTick) * 8 / 1_000_000

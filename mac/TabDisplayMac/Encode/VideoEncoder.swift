@@ -48,10 +48,14 @@ final class VideoEncoder {
 
     /// Se llama en un hilo interno de VideoToolbox.
     var onFrame: ((EncodedFrame) -> Void)?
+    /// Se llama cada vez que el codificador termina un cuadro (salga o se descarte), en un hilo
+    /// de VideoToolbox. Sirve para alimentar el siguiente cuadro sin hacer fila.
+    var onEncodeComplete: (() -> Void)?
 
     private var session: VTCompressionSession?
     private let lock = NSLock()
     private var forceKeyframe = true
+    private var inFlight = 0
     private var lastPtsUs: UInt64 = 0
     private var submitTimes: [UInt64: UInt64] = [:]
 
@@ -81,6 +85,13 @@ final class VideoEncoder {
         }
     }
 
+    /// Cuadros entregados al codificador que aún no salen.
+    var framesInFlight: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return inFlight
+    }
+
     func requestKeyframe() {
         lock.lock()
         forceKeyframe = true
@@ -108,6 +119,7 @@ final class VideoEncoder {
         lastPtsUs = ptsUs
         submitTimes[ptsUs] = HostClock.nowUs()
         if submitTimes.count > 64 { submitTimes.removeAll(keepingCapacity: true) }
+        inFlight += 1
         lock.unlock()
 
         let pts = CMTime(value: CMTimeValue(ptsUs), timescale: 1_000_000)
@@ -127,6 +139,7 @@ final class VideoEncoder {
         if status != noErr {
             Log.encoder.error("VTCompressionSessionEncodeFrame: \(status)")
             if keyframe { requestKeyframe() }
+            finishFrame()
         }
     }
 
@@ -216,7 +229,17 @@ final class VideoEncoder {
 
     // MARK: - Salida
 
+    /// Un cuadro salió (o se descartó) del codificador.
+    private func finishFrame() {
+        lock.lock()
+        inFlight = max(0, inFlight - 1)
+        lock.unlock()
+        onEncodeComplete?()
+    }
+
     private func handleOutput(status: OSStatus, flags: VTEncodeInfoFlags, sampleBuffer: CMSampleBuffer?) {
+        // VideoToolbox llama a este handler exactamente una vez por cuadro entregado.
+        defer { finishFrame() }
         guard status == noErr else {
             Log.encoder.error("Error de codificación: \(status)")
             requestKeyframe()
