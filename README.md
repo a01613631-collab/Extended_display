@@ -18,14 +18,26 @@ CGEvent (clic, arrastre, scroll) ←──────────────�
 
 ## Estado
 
-| Parte | Verificado en este repositorio | Falta verificar en tu hardware |
-|---|---|---|
-| Android | Compila (`assembleDebug`), lint sin avisos, 19 pruebas unitarias (protocolo, reloj, inercia) | Decodificación real, latencia, gestos en la Tab S8+ |
-| Mac | Sintaxis de todos los `.swift` revisada con un parser; pruebas XCTest escritas (protocolo y gestos) | **Compilar con Xcode** (no se pudo: el repositorio se armó sin macOS), monitor virtual, captura, inyección de eventos |
-| Protocolo | Simuladores en Python probados extremo a extremo: 181 cuadros 2800 × 1752 H.264 decodificables, toques, keyframe bajo demanda, PING/PONG, BYE | — |
+**Funciona en el hardware real** (MacBook Pro con Apple Silicon + Galaxy Tab S8+ SM-X800, por USB), probado el 22–23 nov 2026:
 
-Si al compilar en Xcode aparece algún error, lo más probable es un detalle de una API de Apple;
-pégale el error a Claude Code junto con el archivo.
+| | Resultado |
+|---|---|
+| Escritorio extendido | Se ve en la tablet a 2800 × 1752, nítido (HiDPI 2×) |
+| Fluidez | 58 fps enviados y mostrados con H.264 a 60 Hz |
+| Latencia captura → pantalla | ~12–18 ms típicos, picos ocasionales de ~55 ms (overlay / menú) |
+| Codificación | Pocos ms por cuadro; sube en cambios grandes de pantalla (mover ventanas, cambiar de app) |
+| Gestos | Tap, doble tap, arrastre, scroll con 2 dedos, clic derecho con 2 dedos y S Pen (hover y trazo): funcionan |
+
+**Configuración recomendada:** Extender · 1400 × 876 · **H.264** · **60 Hz** · **30 Mbps**.
+HEVC a 120 Hz con 50 Mbps saturó el codificador de la Mac (51 ms por cuadro, ~82 fps, retraso notable
+con el S Pen), por eso sigue marcado como experimental.
+
+Pendiente de probar: reconexión del cable, arranque en frío, modo Wi-Fi, 10 minutos sin acumular retraso,
+la grabación de prueba (Fase 1) y la medición vidrio a vidrio con cámara.
+
+Además del hardware, el repositorio tiene pruebas automáticas: 19 pruebas unitarias en Android
+(protocolo, reloj, inercia), XCTest en la Mac (protocolo y gestos) y simuladores en Python del
+protocolo (ver "Probar un lado sin el otro").
 
 ## Instalación (una sola vez)
 
@@ -33,10 +45,14 @@ pégale el error a Claude Code junto con el archivo.
 ```bash
 brew install xcodegen android-platform-tools ffmpeg
 ```
-Además: **Xcode** (App Store) y **Android Studio** (trae el JDK y el SDK de Android). Abre Android Studio una vez
-para que descargue el SDK. `scripts/install-android.sh` encuentra solo el JDK y el SDK
-(Android Studio en `/Applications` o `~/Applications`, `brew install openjdk@21`,
-`brew install --cask android-commandlinetools`).
+Además, **Xcode** (App Store). Para compilar la app de Android hacen falta un JDK 17+ y el SDK de Android.
+No es necesario Android Studio; con Homebrew basta:
+```bash
+brew install openjdk@21
+brew install --cask android-commandlinetools
+```
+`scripts/install-android.sh` los encuentra solos (también el JDK y el SDK de Android Studio si lo tienes),
+acepta las licencias del SDK y descarga lo que falte la primera vez.
 
 ### 2. Firma de la app de Mac
 macOS guarda los permisos (Grabación de pantalla, Accesibilidad) por firma. Firmar siempre con tu
@@ -90,8 +106,9 @@ Mientras el S Pen está cerca de la pantalla se ignoran los dedos (rechazo de pa
 ### Menú de la Mac
 - **Modo:** Extender (monitor nuevo) o Duplicar (la pantalla principal).
 - **Resolución:** 1400 × 876 (nítida, 2×) o presets con más espacio (1600 × 1000, 1680 × 1050).
-- **Códec:** H.264 (recomendado) o HEVC (experimental). **120 Hz** (experimental, requiere HEVC normalmente).
-- **Bitrate USB:** 15–50 Mbps (30 por defecto).
+- **Códec:** H.264 (recomendado) o HEVC (experimental). **120 Hz** (experimental: a esta resolución satura el
+  codificador y agrega retraso; ver Estado).
+- **Bitrate USB:** 15–50 Mbps (30 por defecto y recomendado).
 - **Wi-Fi:** permite conexiones por la red local (ver abajo).
 - **Reconectar:** rehace `adb reverse`, relanza la app y renegocia la sesión.
 - **Grabar prueba 10 s:** graba el monitor a `~/Desktop/test.h264` sin la tablet (`ffplay ~/Desktop/test.h264`).
@@ -156,11 +173,11 @@ scripts/build-mac.sh --test                            # Mac (XCTest)
   (Cierra antes TabDisplay en la Mac: usan el mismo puerto.)
 
 ### Criterios de aceptación por fase (PLAN.md)
-- [ ] **Fase 0:** ambas apps compilan desde terminal; el monitor "Tab S8+" aparece en Ajustes → Pantallas al conectar la tablet y desaparece al cerrar la app.
-- [ ] **Fase 1:** "Grabar prueba 10 s" → `ffplay ~/Desktop/test.h264` se ve nítido a 2800 × 1752; el mensaje muestra ~60 fps moviendo una ventana y codificación < 8 ms.
-- [ ] **Fase 2:** con el cable, la tablet muestra el escritorio extendido; arrastrar una ventana se ve fluido; desconectar y reconectar el cable recupera la imagen sola.
-- [ ] **Fase 3:** latencia vidrio a vidrio por USB < 80 ms (`scripts/measure-latency.md`); sin acumulación de retraso en 10 min.
-- [ ] **Fase 4:** mover una ventana, hacer scroll en Safari y abrir un menú contextual solo desde la tablet; el cursor sigue al S Pen en hover.
+- [x] **Fase 0:** ambas apps compilan desde terminal (`build-mac.sh`, `install-android.sh`); el monitor "Tab S8+" aparece al conectar la tablet.
+- [ ] **Fase 1:** "Grabar prueba 10 s" → `ffplay ~/Desktop/test.h264` se ve nítido a 2800 × 1752; ~60 fps moviendo una ventana y codificación < 8 ms. *(La codificación ya se vio en pocos ms durante el uso; falta correr la grabación.)*
+- [ ] **Fase 2:** con el cable, la tablet muestra el escritorio extendido ✓; arrastrar una ventana se ve fluido ✓; desconectar y reconectar el cable recupera la imagen sola *(pendiente)*.
+- [ ] **Fase 3:** latencia vidrio a vidrio por USB < 80 ms (`scripts/measure-latency.md`); sin acumulación de retraso en 10 min. *(Captura → pantalla medida: ~12–18 ms; falta la medición con cámara y la prueba de 10 min.)*
+- [x] **Fase 4:** mover una ventana, hacer scroll, abrir un menú contextual solo desde la tablet; el cursor sigue al S Pen en hover.
 - [ ] **Fase 5:** con ambas apps cerradas (TabDisplay con "Abrir al iniciar sesión"), conectar el cable → escritorio en < 3 s.
 - [ ] **Fase 6:** sin cable, < 120 ms y sin cortes > 1 s en 10 min; una tablet sin token es rechazada (`python3 scripts/mock_tablet.py --host <ip-de-la-mac>` debe recibir "Tablet no emparejada").
 - Fase 7 (parcial): modo Duplicar, presión del S Pen como tableta y error claro si falla la API privada están hechos; falta el modo vertical.

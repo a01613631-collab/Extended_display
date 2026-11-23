@@ -72,13 +72,13 @@ Formato: fecha — decisión — motivo. Las más recientes al final.
 
 ## Resultados de experimentos (Fase 3)
 
-Pendiente de medir en hardware real (ver `scripts/measure-latency.md`).
+Mediciones en hardware real. La columna "vidrio a vidrio" se mide con cámara (`scripts/measure-latency.md`).
 
-| Fecha | Transporte | Códec | fps | Bitrate | Vidrio a vidrio (mediana) | Overlay | Notas |
+| Fecha | Transporte | Códec | fps | Bitrate | Vidrio a vidrio (mediana) | Captura → pantalla (overlay) | Notas |
 |---|---|---|---|---|---|---|---|
+| 2026-11-22 | USB | HEVC | 120 | 50 Mbps | — | — (medición aún rota) | Codificación 51 ms/cuadro, 82 fps enviados, 221 descartados; retraso notable con el S Pen. Antes de limitar la fila del codificador. |
+| 2026-11-22 | USB | H.264 | 60 | 30 Mbps | pendiente | 12–18 ms típicos, picos ~55 ms | 58 fps enviados/mostrados, RTT ~3–4 ms, codificación de pocos ms con picos en cambios grandes. Gestos y S Pen OK. Configuración recomendada. |
 | | USB | H.264 | 60 | 15 Mbps | | | |
-| | USB | H.264 | 60 | 30 Mbps | | | |
 | | USB | H.264 | 60 | 50 Mbps | | | |
 | | USB | HEVC | 60 | 30 Mbps | | | |
-| | USB | HEVC | 120 | 30 Mbps | | | |
 | | Wi-Fi | H.264 | 60 | auto | | | |
